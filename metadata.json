@@ -1,0 +1,5 @@
+{
+  "name": "Veille Commerciale",
+  "description": "Système de veille commerciale intelligent avec analyse d'efficience, recherche de marché en temps réel, export PDF et sauvegarde sécurisée sur Firebase.",
+  "requestFramePermissions": []
+}

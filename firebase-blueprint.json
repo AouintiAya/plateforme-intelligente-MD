@@ -1,0 +1,47 @@
+{
+  "entities": {
+    "Formation": {
+      "title": "Formation",
+      "description": "Représente une fiche de formation avec ses détails.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Identifiant unique de la formation." },
+        "title": { "type": "string", "description": "Titre de la formation." },
+        "price": { "type": "string", "description": "Prix de la formation." },
+        "technologies": { "type": "string", "description": "Technologies abordées." },
+        "originalFiche": { "type": "object", "description": "Données extraites du document original." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Date de dernière mise à jour." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Date de création." }
+      },
+      "required": ["title"]
+    },
+    "Analysis": {
+      "title": "Analysis",
+      "description": "Représente l'analyse complète d'une fiche de formation.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Identifiant unique de l'analyse." },
+        "formationId": { "type": "string", "description": "Lien vers l'ID de la formation." },
+        "step": { "type": "string", "description": "Étape actuelle du workflow." },
+        "analysis": { "type": "object", "description": "Résultats de l'Agent d'Analyse." },
+        "search": { "type": "object", "description": "Résultats de l'Agent de Recherche." },
+        "creation": { "type": "object", "description": "Résultats de l'Agent de Création." },
+        "validation": { "type": "object", "description": "Résultats de l'Agent de Validation." },
+        "marketing": { "type": "object", "description": "Résultats de l'Agent de Veille Marketing." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Date de dernière mise à jour." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Date de création." }
+      },
+      "required": ["formationId"]
+    }
+  },
+  "firestore": {
+    "/formations/{formationId}": {
+      "schema": "Formation",
+      "description": "Collection des fiches de formation."
+    },
+    "/analyses/{analysisId}": {
+      "schema": "Analysis",
+      "description": "Collection des analyses liées aux formations."
+    }
+  }
+}

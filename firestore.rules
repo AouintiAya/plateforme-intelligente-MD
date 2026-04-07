@@ -1,0 +1,130 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: formations
+    // Document ID: {formationId}
+    // Fields:
+    //   - id: string (optional)
+    //   - title: string (required, min 1, max 200)
+    //   - price: string (optional, max 100)
+    //   - technologies: string (optional, max 500)
+    //   - technologiesList: list (optional)
+    //   - description: string (optional, max 5000)
+    //   - target: string (optional, max 500)
+    //   - duration: string (optional, max 100)
+    //   - programme: string (optional, max 10000)
+    //   - originalFiche: map (optional)
+    //   - correctedFiche: map (optional)
+    //   - evaluation: map (optional)
+    //   - updatedAt: timestamp (optional)
+    //   - createdAt: timestamp (optional)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          ((request.auth.token.email == "ayaaouinti8@gmail.com" || request.auth.token.email == "aouintiaya25@gmail.com") && request.auth.token.email_verified == true));
+    }
+
+    function isValidFormation(data) {
+      let allowedFields = [
+        'id', 'uid', 'title', 'concept', 'target', 'why', 'includes', 'supports', 
+        'format', 'duration', 'references', 'differentiation', 'ecosystem', 
+        'technologiesList', 'price', 'region', 'certifications', 'updatedAt', 'createdAt'
+      ];
+      return data.keys().hasOnly(allowedFields) &&
+             data.keys().hasAll(['title', 'uid']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
+             data.uid == request.auth.uid &&
+             (!('id' in data) || data.id is string) &&
+             (!('concept' in data) || (data.concept is string && data.concept.size() <= 10000)) &&
+             (!('target' in data) || (data.target is string && data.target.size() <= 2000)) &&
+             (!('why' in data) || (data.why is string && data.why.size() <= 10000)) &&
+             (!('includes' in data) || (data.includes is string && data.includes.size() <= 10000)) &&
+             (!('supports' in data) || (data.supports is string && data.supports.size() <= 5000)) &&
+             (!('format' in data) || (data.format is string && data.format.size() <= 500)) &&
+             (!('duration' in data) || (data.duration is string && data.duration.size() <= 500)) &&
+             (!('references' in data) || (data.references is string && data.references.size() <= 10000)) &&
+             (!('differentiation' in data) || (data.differentiation is string && data.differentiation.size() <= 10000)) &&
+             (!('ecosystem' in data) || (data.ecosystem is string && data.ecosystem.size() <= 10000)) &&
+             (!('technologiesList' in data) || data.technologiesList is list) &&
+             (!('price' in data) || (data.price is string && data.price.size() <= 500)) &&
+             (!('region' in data) || (data.region is string && data.region.size() <= 500)) &&
+             (!('certifications' in data) || (data.certifications is string && data.certifications.size() <= 1000)) &&
+             (!('updatedAt' in data) || data.updatedAt is timestamp) &&
+             (!('createdAt' in data) || data.createdAt is timestamp);
+    }
+
+    function isValidAnalysis(data) {
+      let allowedFields = [
+        'id', 'formationId', 'uid', 'title', 'mode', 'intelligenceQuery', 
+        'updatedAt', 'createdAt', 'analysis', 'search', 'creation', 
+        'validation', 'marketing', 'step'
+      ];
+      return data.keys().hasOnly(allowedFields) &&
+             data.keys().hasAll(['title', 'uid', 'mode']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 1000 &&
+             data.uid == request.auth.uid &&
+             data.mode in ['VALIDATION', 'INTELLIGENCE'] &&
+             (!('id' in data) || data.id is string) &&
+             (!('formationId' in data) || data.formationId is string) &&
+             (!('intelligenceQuery' in data) || (data.intelligenceQuery is string && data.intelligenceQuery.size() <= 2000)) &&
+             (!('step' in data) || data.step is string) &&
+             (!('analysis' in data) || data.analysis is map || data.analysis == null) &&
+             (!('search' in data) || data.search is map || data.search == null) &&
+             (!('creation' in data) || data.creation is map || data.creation == null) &&
+             (!('validation' in data) || data.validation is map || data.validation == null) &&
+             (!('marketing' in data) || data.marketing is map || data.marketing == null) &&
+             (!('updatedAt' in data) || data.updatedAt is timestamp) &&
+             (!('createdAt' in data) || data.createdAt is timestamp);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /formations/{formationId} {
+      allow read: if isAuthenticated() && (isAdmin() || isDocOwner());
+      allow create: if isAuthenticated() && (isAdmin() || isValidFormation(request.resource.data));
+      allow update: if isAuthenticated() && (isAdmin() || (isDocOwner() && isValidFormation(request.resource.data)));
+      allow delete: if isAdmin();
+    }
+
+    match /analyses/{analysisId} {
+      allow read: if isAuthenticated() && (isAdmin() || isDocOwner());
+      allow create: if isAuthenticated() && (isAdmin() || isValidAnalysis(request.resource.data));
+      allow update: if isAuthenticated() && (isAdmin() || (isDocOwner() && isValidAnalysis(request.resource.data)));
+      allow delete: if isAdmin();
+    }
+
+    // Allow collectionGroup queries for analyses
+    match /{path=**}/analyses/{analysisId} {
+      allow read: if isAuthenticated();
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+  }
+}
